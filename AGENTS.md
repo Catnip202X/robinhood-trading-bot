@@ -60,6 +60,11 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-04
 
+- Added a read-only Robinhood snapshot implementation plan at `docs/superpowers/plans/2026-07-04-readonly-robinhood-snapshot.md`.
+- The plan scopes the next app slice to sanitized, read-only portfolio/positions/order reporting and explicitly excludes real order placement.
+- Verification: reviewed the approved design spec, current app scaffold, and available `mcp__robinhood_trading_2` tool surface before writing the plan.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added this `AGENTS.md` file to capture the project summary, standing user instructions, safety rules, and required changelog discipline.
 - Confirmed that the restarted Codex app exposes `mcp__robinhood_trading_2` tools, including read-only account/portfolio tools and real order review/placement tools.
 - Local ignored `.env` already points at the Robinhood MCP trading URL and uses `ROBINHOOD_AUTH_PROFILE=robinhood_trading-2`.
