@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
+from pathlib import Path
+
+from robinhood_trading_bot.env import merged_env
 
 
 def _parse_watchlist(raw_value: str) -> tuple[str, ...]:
@@ -21,11 +23,12 @@ class BotConfig:
     tech_watchlist: tuple[str, ...] = ()
 
     @classmethod
-    def from_env(cls) -> "BotConfig":
+    def from_env(cls, env_file: str | Path = ".env") -> "BotConfig":
+        env = merged_env(env_file)
         return cls(
-            mode=os.getenv("BOT_MODE", "dry-run").strip() or "dry-run",
-            timezone=os.getenv("BOT_TIMEZONE", "America/New_York").strip() or "America/New_York",
-            database_path=os.getenv("BOT_DATABASE_PATH", "data/trading-bot.sqlite3").strip()
+            mode=env.get("BOT_MODE", "dry-run").strip() or "dry-run",
+            timezone=env.get("BOT_TIMEZONE", "America/New_York").strip() or "America/New_York",
+            database_path=env.get("BOT_DATABASE_PATH", "data/trading-bot.sqlite3").strip()
             or "data/trading-bot.sqlite3",
-            tech_watchlist=_parse_watchlist(os.getenv("BOT_TECH_WATCHLIST", "")),
+            tech_watchlist=_parse_watchlist(env.get("BOT_TECH_WATCHLIST", "")),
         )

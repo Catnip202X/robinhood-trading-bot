@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
+from pathlib import Path
+
+from robinhood_trading_bot.env import merged_env
 
 
 @dataclass(frozen=True)
@@ -17,11 +19,12 @@ class RobinhoodAuthConfig:
     auth_profile: str = "default"
 
     @classmethod
-    def from_env(cls) -> "RobinhoodAuthConfig":
+    def from_env(cls, env_file: str | Path = ".env") -> "RobinhoodAuthConfig":
+        env = merged_env(env_file)
         return cls(
-            mcp_server_url=os.getenv("ROBINHOOD_MCP_SERVER_URL", "").strip(),
-            account_id=os.getenv("ROBINHOOD_ACCOUNT_ID", "").strip(),
-            auth_profile=os.getenv("ROBINHOOD_AUTH_PROFILE", "default").strip() or "default",
+            mcp_server_url=env.get("ROBINHOOD_MCP_SERVER_URL", "").strip(),
+            account_id=env.get("ROBINHOOD_ACCOUNT_ID", "").strip(),
+            auth_profile=env.get("ROBINHOOD_AUTH_PROFILE", "default").strip() or "default",
         )
 
     @property
