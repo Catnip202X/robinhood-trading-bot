@@ -1,0 +1,10 @@
+{
+  "mode": "dry-run",
+  "auth_profile": "robinhood_trading-2",
+  "account_label": "primary",
+  "portfolio": {"total_market_value": "1000.00", "buying_power": "250.00"},
+  "equity_positions": [{"symbol": "AAPL", "quantity": "2", "average_cost": "150.00"}],
+  "option_positions": [],
+  "recent_orders": [],
+  "realized_pnl": null
+}

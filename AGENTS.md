@@ -60,6 +60,36 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-04
 
+- Sanitized snapshot negative-test sentinels to avoid account-number-shaped placeholder values in public tests.
+- This keeps the repository examples and tests clearly synthetic while still proving raw account fields are rejected.
+- Verification: identified the placeholder during pre-push patch review and replaced it with a nonnumeric redaction token.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
+- Completed the Task 4 live Robinhood MCP read-only connectivity probe against the user-selected agentic account.
+- The probe verified that authenticated read-only Robinhood MCP calls can be made for the selected account; account-specific results were summarized only in the private thread and are not recorded in repository files.
+- Verification: used only read-only MCP calls, including user-requested account discovery and portfolio/positions/orders/P&L reads; did not call review, place, cancel, or watchlist write tools.
+- Secrets/account data touched: live account data was accessed read-only during the private thread, but no secrets, credentials, account identifiers, account state, local databases, or logs were committed.
+
+- Added the `snapshot --fixture` CLI command, a subprocess CLI test for sanitized snapshot JSON output, and README usage for the local fixture workflow.
+- This exposes the Task 3 read-only snapshot report path without adding live Robinhood MCP calls to the Python package runtime.
+- Verification: added the CLI subprocess test first, confirmed targeted CLI tests failed because the `snapshot` command was missing, then confirmed targeted CLI tests passed after adding the command.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
+- Added read-only snapshot assembly in `src/robinhood_trading_bot/snapshot.py`, a sanitized fixture at `tests/fixtures/read_only_snapshot.json`, and a fixture assembly test in `tests/test_snapshot.py`.
+- This lets local tests build a dry-run `SnapshotReport` from sanitized fixture data without calling Robinhood MCP or passing raw dictionaries through report collections.
+- Verification: added the fixture assembly test first, confirmed targeted snapshot tests failed with missing `robinhood_trading_bot.snapshot`, then confirmed targeted snapshot tests passed after adding the fixture and builder.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
+- Added snapshot report models in `src/robinhood_trading_bot/models.py` and a serialization test in `tests/test_snapshot.py`.
+- This creates the sanitized, read-only model layer for portfolio snapshot reporting without storing account numbers.
+- Verification: ran targeted snapshot unittest red before implementation, then green after adding the minimal models.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
+- Tightened snapshot serialization so raw dictionaries are rejected instead of copied into public output.
+- This prevents future raw Robinhood fields, including account identifiers, from leaking through model serialization.
+- Verification: added failing tests for raw position and realized P/L dictionaries, confirmed they failed before the fix, then confirmed targeted snapshot tests passed.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added `.worktrees/` to `.gitignore` before creating an isolated implementation worktree for subagent-driven development.
 - This prevents local feature worktree contents from being accidentally committed into the public repository.
 - Verification: checked `git check-ignore` before the change and confirmed `.worktrees/` was not ignored.

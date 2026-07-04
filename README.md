@@ -41,6 +41,15 @@ trading-bot status
 
 The status command reports the configured mode, watchlist, and whether Robinhood MCP auth settings are present. It does not place trades.
 
+To print a read-only sanitized snapshot from fixture data:
+
+```powershell
+$env:PYTHONPATH='src'
+python -m robinhood_trading_bot.cli snapshot --fixture tests/fixtures/read_only_snapshot.json
+```
+
+The snapshot command currently reads only sanitized local fixture data and prints public JSON. It does not call Robinhood MCP, expose account numbers, or place trades.
+
 ## Tests
 
 ```powershell
