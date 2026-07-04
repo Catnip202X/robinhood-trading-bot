@@ -60,6 +60,11 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-04
 
+- Added `.worktrees/` to `.gitignore` before creating an isolated implementation worktree for subagent-driven development.
+- This prevents local feature worktree contents from being accidentally committed into the public repository.
+- Verification: checked `git check-ignore` before the change and confirmed `.worktrees/` was not ignored.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added a read-only Robinhood snapshot implementation plan at `docs/superpowers/plans/2026-07-04-readonly-robinhood-snapshot.md`.
 - The plan scopes the next app slice to sanitized, read-only portfolio/positions/order reporting and explicitly excludes real order placement.
 - Verification: reviewed the approved design spec, current app scaffold, and available `mcp__robinhood_trading_2` tool surface before writing the plan.
