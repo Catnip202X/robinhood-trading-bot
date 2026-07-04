@@ -52,6 +52,15 @@ python -m unittest discover -s tests -v
 
 See [docs/AUTH.md](docs/AUTH.md). In short: authenticate Robinhood MCP locally using your own account and keep all account IDs, tokens, API keys, and MCP credentials out of Git.
 
+This repo includes a project-scoped Codex MCP entry at [.codex/config.toml](.codex/config.toml):
+
+```toml
+[mcp_servers.robinhood_trading]
+url = "https://agent.robinhood.com/mcp/trading"
+```
+
+In Codex, select Streamable HTTP if adding it manually, or trust the project so the checked-in config can load. Use `codex mcp login robinhood_trading` if the Robinhood MCP server asks for OAuth.
+
 ## Design
 
 The approved design spec is in [docs/superpowers/specs/2026-07-04-robinhood-trading-bot-design.md](docs/superpowers/specs/2026-07-04-robinhood-trading-bot-design.md).
