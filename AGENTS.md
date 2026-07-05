@@ -60,6 +60,11 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-05
 
+- Added test-covered fractional stock buy dollar sizing in `risk.py`, plus README documentation and an implementation plan.
+- This lets future stock entry logic prepare Robinhood fractional market buy reviews using `dollar_amount` while capping each candidate by both available buying power and the existing stock risk rule.
+- Verification: wrote failing unit tests first, confirmed the missing-function failure, implemented the sizing helper, confirmed targeted risk tests pass, ran the full unittest suite, ran `git diff --check`, and completed a public secret/account pattern scan.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added the fractional stock buy sizing design spec for dollar-based Robinhood stock buys using `dollar_amount`.
 - This captures the approved behavior that available buying power is an upper bound while the existing stock risk cap still controls candidate size.
 - Verification: reviewed the current project guardrails, clean Git state, and approved user design before writing the spec.

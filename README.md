@@ -50,6 +50,12 @@ python -m robinhood_trading_bot.cli snapshot --fixture tests/fixtures/read_only_
 
 The snapshot command currently reads only sanitized local fixture data and prints public JSON. It does not call Robinhood MCP, expose account numbers, or place trades.
 
+## Stock Buy Sizing
+
+Stock entries are sized as dollar-based fractional buy candidates. The bot uses Robinhood buying power as the available cash ceiling, then applies the stock risk rule from this repo: the active risk cap is the lower of 3% of account equity or half of the average absolute daily percentage move over the last 7 trading days.
+
+The helper `stock_buy_dollar_amount` returns the lower of available buying power and that risk-budget dollar amount, rounded down to cents. Candidates below the minimum order amount are skipped. This value is intended for Robinhood equity market buy reviews using `dollar_amount`; it is not a live order placement path.
+
 ## Tests
 
 ```powershell
