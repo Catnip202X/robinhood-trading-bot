@@ -22,7 +22,7 @@ This repo is designed to be public:
 - `.env.example` contains placeholders only.
 - The app defaults to `dry-run` mode.
 
-## Setup
+## Quick Start
 
 ```powershell
 python -m venv .venv
@@ -32,6 +32,24 @@ Copy-Item .env.example .env
 ```
 
 Edit `.env` locally with your own settings. Do not commit `.env`.
+
+Configure Robinhood MCP locally before using live broker data:
+
+1. Trust this project in Codex so [.codex/config.toml](.codex/config.toml) can load.
+2. Confirm the `robinhood_trading` MCP server uses Streamable HTTP.
+3. Use this MCP URL:
+
+   ```text
+   https://agent.robinhood.com/mcp/trading
+   ```
+
+4. If OAuth is required, run:
+
+   ```powershell
+   codex mcp login robinhood_trading
+   ```
+
+Keep Robinhood tokens, account identifiers, and private MCP configuration out of Git. See [docs/AUTH.md](docs/AUTH.md) for the full authentication guide.
 
 ## Run
 

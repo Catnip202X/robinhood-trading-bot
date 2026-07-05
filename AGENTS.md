@@ -60,6 +60,11 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-05
 
+- Added Robinhood MCP quick-start documentation to `README.md`.
+- This makes the Streamable HTTP setup path and MCP URL visible during initial repo setup while keeping detailed auth guidance in `docs/AUTH.md`.
+- Verification: reviewed existing README and auth docs before editing, ran `git diff --check`, and completed a public secret/account pattern scan.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added test-covered fractional stock buy dollar sizing in `risk.py`, plus README documentation and an implementation plan.
 - This lets future stock entry logic prepare Robinhood fractional market buy reviews using `dollar_amount` while capping each candidate by both available buying power and the existing stock risk rule.
 - Verification: wrote failing unit tests first, confirmed the missing-function failure, implemented the sizing helper, confirmed targeted risk tests pass, ran the full unittest suite, ran `git diff --check`, and completed a public secret/account pattern scan.
