@@ -58,6 +58,13 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-07-05
+
+- Added the fractional stock buy sizing design spec for dollar-based Robinhood stock buys using `dollar_amount`.
+- This captures the approved behavior that available buying power is an upper bound while the existing stock risk cap still controls candidate size.
+- Verification: reviewed the current project guardrails, clean Git state, and approved user design before writing the spec.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 ### 2026-07-04
 
 - Sanitized snapshot negative-test sentinels to avoid account-number-shaped placeholder values in public tests.
