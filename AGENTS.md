@@ -30,6 +30,9 @@ This project is not financial advice. Treat all trading actions as high risk. Ne
 - Stock trade risk cap: use the lower of 3% of account equity or half of the average absolute daily percentage move over the last 7 trading days.
 - Crypto trade risk cap: start with a separate cap of 3% of account equity, sized as USD notional for fractional crypto buys.
 - Crypto live execution must remain blocked unless the authenticated Robinhood MCP server exposes official crypto order review and placement tools and the user explicitly confirms the exact trade.
+- Future local GUI work should use a thin .NET desktop wrapper around the Python core rather than moving trading logic into the GUI.
+- User risk settings should be editable locally, validated by the Python core, and kept out of Git except for sample/default configuration.
+- Scheduler intervals for price checks and account-status checks should be user configurable, with a starting minimum of 10 minutes and no overlapping runs of the same job type.
 - Follow current FINRA intraday-margin guidance and broker-provided constraints.
 - Include a daily after-action report during the 10 PM decision phase.
 - The after-action report should summarize trades made that day, skipped/rejected trades, P/L snapshots, exposure, rationale, and next-day option proposals.
@@ -62,6 +65,11 @@ Do not commit a change if its changelog entry is missing.
 ## Changelog
 
 ### 2026-07-06
+
+- Added the local control panel, user risk settings, Robinhood auth preflight, and configurable scheduler design spec.
+- This captures the approved direction for a .NET GUI wrapper, local user-owned risk policy, guided MCP auth readiness, and non-overlapping background checks at user-selected intervals.
+- Verification: reviewed the clean worktree, current specs, and standing project guardrails before writing the spec.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
 
 - Added crypto USD buy sizing, sanitized dry-run crypto order intents, README documentation, and an implementation plan.
 - This lets the app model fractional crypto trade candidates safely while live crypto execution remains blocked until Robinhood MCP exposes official crypto order review/place tools.
