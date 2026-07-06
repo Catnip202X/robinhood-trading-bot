@@ -8,6 +8,7 @@ The intended app has two trading lanes:
 
 - Stocks: autonomous trading for a user-provided fixed list of technology tickers.
 - Options: event/news-driven discovery with nightly human approval for next-market-day entries and automatic exits when configured exit rules trigger.
+- Crypto: autonomous candidate generation with fractional USD sizing, dry-run order intents, and live execution gated on official Robinhood MCP crypto order tools.
 
 The bot must integrate with Robinhood through the authenticated `robinhood_trading-2` MCP server when available. The local app must stay safe by default and run in `dry-run` mode unless the user explicitly enables a live mode.
 
@@ -27,6 +28,8 @@ This project is not financial advice. Treat all trading actions as high risk. Ne
 - Options profit rule: sell when value approaches 2x total purchase cost.
 - Options defensive rule: if a profitable option starts dropping back toward entry, sell at +10% above entry.
 - Stock trade risk cap: use the lower of 3% of account equity or half of the average absolute daily percentage move over the last 7 trading days.
+- Crypto trade risk cap: start with a separate cap of 3% of account equity, sized as USD notional for fractional crypto buys.
+- Crypto live execution must remain blocked unless the authenticated Robinhood MCP server exposes official crypto order review and placement tools and the user explicitly confirms the exact trade.
 - Follow current FINRA intraday-margin guidance and broker-provided constraints.
 - Include a daily after-action report during the 10 PM decision phase.
 - The after-action report should summarize trades made that day, skipped/rejected trades, P/L snapshots, exposure, rationale, and next-day option proposals.
@@ -57,6 +60,13 @@ Do not commit a change if its changelog entry is missing.
 - Keep public docs generic; keep user-specific account details in ignored local files.
 
 ## Changelog
+
+### 2026-07-06
+
+- Added the crypto trading lane design spec and standing crypto safety instructions.
+- This defines crypto as an autonomous dry-run lane with fractional USD sizing and live execution blocked until Robinhood MCP exposes official crypto order review/place tools.
+- Verification: reviewed current repo guardrails and discovered the active Robinhood MCP tool surface before writing the spec.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
 
 ### 2026-07-05
 
