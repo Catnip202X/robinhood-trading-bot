@@ -51,14 +51,14 @@ The GUI must not become a credential store.
 
 ## Scheduler and Multithreading
 
-Users may choose more frequent checks than the original 30-minute cadence, such as every 15 or 10 minutes. The app should allow that, with validation and clear display of the active interval.
+Users may choose more frequent or less frequent checks than the original 30-minute cadence. The app should allow intervals from 1 second through 60 minutes, with validation and clear display of the active interval.
 
 Scheduler behavior:
 
 - price-check interval is user configurable;
 - account-status interval is user configurable;
 - default remains 30 minutes for price checks;
-- allowed minimum should start at 10 minutes to avoid runaway polling;
+- allowed range is 1 second through 60 minutes;
 - background work must not block the GUI;
 - each job type must avoid overlap with itself;
 - if a check is still running when the next tick arrives, skip the new tick and report the skip;
@@ -103,7 +103,7 @@ Implementation should include tests for:
 
 - loading defaults when no local settings file exists;
 - validating user-provided risk caps and intervals;
-- rejecting intervals below the minimum;
+- rejecting intervals below 1 second or above 60 minutes;
 - ensuring pause state suppresses scheduled work;
 - ensuring a job skip is reported when a previous run is still active;
 - ensuring auth preflight output is sanitized.
