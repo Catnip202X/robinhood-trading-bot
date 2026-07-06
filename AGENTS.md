@@ -63,6 +63,11 @@ Do not commit a change if its changelog entry is missing.
 
 ### 2026-07-06
 
+- Added crypto USD buy sizing, sanitized dry-run crypto order intents, README documentation, and an implementation plan.
+- This lets the app model fractional crypto trade candidates safely while live crypto execution remains blocked until Robinhood MCP exposes official crypto order review/place tools.
+- Verification: wrote failing crypto sizing and intent tests first, confirmed the expected missing-function and missing-module failures, implemented the helpers, confirmed targeted tests pass, ran the full unittest suite, ran `git diff --check`, and completed a public secret/account pattern scan.
+- Secrets/account data touched: no committed secrets, credentials, account identifiers, local databases, or logs.
+
 - Added the crypto trading lane design spec and standing crypto safety instructions.
 - This defines crypto as an autonomous dry-run lane with fractional USD sizing and live execution blocked until Robinhood MCP exposes official crypto order review/place tools.
 - Verification: reviewed current repo guardrails and discovered the active Robinhood MCP tool surface before writing the spec.

@@ -74,6 +74,14 @@ Stock entries are sized as dollar-based fractional buy candidates. The bot uses 
 
 The helper `stock_buy_dollar_amount` returns the lower of available buying power and that risk-budget dollar amount, rounded down to cents. Candidates below the minimum order amount are skipped. This value is intended for Robinhood equity market buy reviews using `dollar_amount`; it is not a live order placement path.
 
+## Crypto Lane
+
+Crypto uses Robinhood currency-pair symbols such as `BTC-USD` and `ETH-USD`. Pair discovery can use Robinhood MCP search with `asset_type="currency_pair"` when the MCP server is available.
+
+Crypto buy candidates are sized as USD notional amounts so partial crypto purchases are supported. The helper `crypto_buy_dollar_amount` uses buying power as the cash ceiling, applies the crypto risk cap of 3% of account equity by default, rounds down to cents, and skips candidates below the minimum order amount.
+
+The app currently creates sanitized dry-run crypto order intents only. Live crypto execution remains blocked until the authenticated Robinhood MCP server exposes official crypto order review and placement tools, and even then real orders require explicit confirmation of the exact trade.
+
 ## Tests
 
 ```powershell

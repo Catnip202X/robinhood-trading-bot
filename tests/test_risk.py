@@ -1,6 +1,10 @@
 import unittest
 
-from robinhood_trading_bot.risk import stock_buy_dollar_amount, stock_trade_risk_cap_percent
+from robinhood_trading_bot.risk import (
+    crypto_buy_dollar_amount,
+    stock_buy_dollar_amount,
+    stock_trade_risk_cap_percent,
+)
 
 
 class StockRiskTests(unittest.TestCase):
@@ -40,6 +44,31 @@ class StockRiskTests(unittest.TestCase):
 
     def test_stock_buy_dollar_amount_skips_amounts_below_minimum(self):
         amount = stock_buy_dollar_amount("0.99", "1000.00", 3.0)
+
+        self.assertIsNone(amount)
+
+    def test_crypto_buy_dollar_amount_uses_buying_power_when_it_is_lower(self):
+        amount = crypto_buy_dollar_amount("25.00", "1000.00")
+
+        self.assertEqual(amount, "25.00")
+
+    def test_crypto_buy_dollar_amount_uses_risk_budget_when_it_is_lower(self):
+        amount = crypto_buy_dollar_amount("500.00", "1000.00")
+
+        self.assertEqual(amount, "30.00")
+
+    def test_crypto_buy_dollar_amount_rounds_down_to_cents(self):
+        amount = crypto_buy_dollar_amount("500.00", "333.33")
+
+        self.assertEqual(amount, "9.99")
+
+    def test_crypto_buy_dollar_amount_skips_non_positive_inputs(self):
+        self.assertIsNone(crypto_buy_dollar_amount("0", "1000.00"))
+        self.assertIsNone(crypto_buy_dollar_amount("500.00", "0"))
+        self.assertIsNone(crypto_buy_dollar_amount("500.00", "1000.00", risk_cap_percent=0))
+
+    def test_crypto_buy_dollar_amount_skips_amounts_below_minimum(self):
+        amount = crypto_buy_dollar_amount("0.99", "1000.00")
 
         self.assertIsNone(amount)
 

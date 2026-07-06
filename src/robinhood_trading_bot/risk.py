@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation, ROUND_DOWN
 
 CENT = Decimal("0.01")
+DEFAULT_CRYPTO_RISK_CAP_PERCENT = Decimal("3.0")
 
 
 def _positive_decimal(value: object) -> Decimal | None:
@@ -44,6 +45,36 @@ def stock_buy_dollar_amount(
     dollar-based market orders, so this returns a cents-rounded notional value.
     """
 
+    return _buy_dollar_amount(
+        buying_power=buying_power,
+        account_equity=account_equity,
+        risk_cap_percent=risk_cap_percent,
+        minimum_order_amount=minimum_order_amount,
+    )
+
+
+def crypto_buy_dollar_amount(
+    buying_power: object,
+    account_equity: object,
+    risk_cap_percent: object = DEFAULT_CRYPTO_RISK_CAP_PERCENT,
+    minimum_order_amount: object = "1.00",
+) -> str | None:
+    """Return a dollar amount for a fractional crypto buy candidate."""
+
+    return _buy_dollar_amount(
+        buying_power=buying_power,
+        account_equity=account_equity,
+        risk_cap_percent=risk_cap_percent,
+        minimum_order_amount=minimum_order_amount,
+    )
+
+
+def _buy_dollar_amount(
+    buying_power: object,
+    account_equity: object,
+    risk_cap_percent: object,
+    minimum_order_amount: object,
+) -> str | None:
     buying_power_amount = _positive_decimal(buying_power)
     account_equity_amount = _positive_decimal(account_equity)
     risk_cap = _positive_decimal(risk_cap_percent)
