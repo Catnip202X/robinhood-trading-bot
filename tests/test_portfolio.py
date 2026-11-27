@@ -8,7 +8,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from robinhood_trading_bot.portfolio import PortfolioPlan, is_rebalance_due, plan_rebalance, target_weights
+from robinhood_trading_bot.portfolio import PortfolioPlan, is_rebalance_due, plan_deposit, plan_rebalance, target_weights
 
 PICKS = ("AAPL", "MSFT", "NVDA", "GOOGL", "AMD", "MU", "WDC", "AMAT", "NET", "NFLX")
 
@@ -74,6 +74,38 @@ class RebalanceTests(unittest.TestCase):
         self.assertTrue(any("minimum order" in w for w in plan_rebalance(plan, {}, Decimal("10")).warnings))
 
 
+class DepositTests(unittest.TestCase):
+    def test_deposit_on_target_portfolio_is_spread_by_weights(self):
+        plan = PortfolioPlan(picks=PICKS[:5])
+        weights = target_weights(plan)
+        holdings = {s: w * 100 for s, w in weights.items()}
+        result = plan_deposit(plan, holdings, Decimal("100"), Decimal("100"))
+        orders = {o.symbol: Decimal(o.dollar_amount) for o in result.orders}
+        self.assertEqual(orders["VTI"], Decimal("37.50"))
+        self.assertEqual(orders["AAPL"], Decimal("5.00"))
+        self.assertLessEqual(sum(orders.values()), Decimal("100"))
+        self.assertTrue(all(o.side == "buy" for o in result.orders))
+
+    def test_deposit_goes_to_underweight_holdings_first(self):
+        plan = PortfolioPlan(core_fraction=Decimal("1"), core_weights={"VTI": Decimal("0.5"), "BND": Decimal("0.5")})
+        result = plan_deposit(plan, {"VTI": Decimal("60"), "BND": Decimal("40")}, Decimal("20"), Decimal("20"))
+        self.assertEqual([(o.symbol, o.dollar_amount) for o in result.orders], [("BND", "20.00")])
+
+    def test_deposit_is_not_capped_by_budget_but_is_capped_by_cash(self):
+        plan = PortfolioPlan(budget_usd=Decimal("50"), picks=PICKS[:8])
+        big = plan_deposit(plan, {"VTI": Decimal("50")}, Decimal("200"), Decimal("500"))
+        self.assertEqual(sum(Decimal(o.dollar_amount) for o in big.orders), Decimal("200.00"))
+        short = plan_deposit(plan, {}, Decimal("200"), Decimal("30"))
+        self.assertLessEqual(sum(Decimal(o.dollar_amount) for o in short.orders), Decimal("30"))
+        self.assertTrue(any("margin" in w for w in short.warnings))
+
+    def test_small_deposit_skips_buys_under_minimum(self):
+        plan = PortfolioPlan(picks=PICKS[:8])
+        result = plan_deposit(plan, {}, Decimal("10"), Decimal("10"))
+        self.assertTrue(all(Decimal(o.dollar_amount) >= Decimal("1") for o in result.orders))
+        self.assertLessEqual(sum(Decimal(o.dollar_amount) for o in result.orders), Decimal("10"))
+
+
 class ScheduleTests(unittest.TestCase):
     def test_quarterly_schedule(self):
         self.assertTrue(is_rebalance_due(None, date(2026, 11, 27)))
@@ -87,7 +119,6 @@ class PortfolioCliTests(unittest.TestCase):
     def test_portfolio_plan_command_is_dry_run_and_logs(self):
         env = os.environ.copy()
         env["PYTHONPATH"] = "src"
-        env["BOT_TECH_WATCHLIST"] = "AAPL,NVDA,MSFT"
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "log.jsonl"
             result = subprocess.run(
@@ -97,7 +128,7 @@ class PortfolioCliTests(unittest.TestCase):
             )
             payload = json.loads(result.stdout)
             self.assertEqual(payload["mode"], "dry-run")
-            self.assertEqual(payload["picks"], ["AAPL", "NVDA", "MSFT"])
+            self.assertEqual(len(payload["picks"]), 8)
             self.assertTrue(all(o["dry_run_only"] for o in payload["orders"]))
             self.assertEqual(len(log.read_text().splitlines()), 1)
 

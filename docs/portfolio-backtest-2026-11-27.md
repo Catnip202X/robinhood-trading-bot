@@ -15,7 +15,11 @@ Daily adjusted closes from Yahoo Finance, 2021-11 to 2026-11. Settings were chos
 | Diversified core alone | +24% | −12% | 0.90 |
 | S&P 500 (SPY) | +24% | −19% | 0.69 |
 
-The default plan (75% core, 8 picks at 3.125% each) scored +53%, −16% max drawdown and Sharpe 1.23 on `portfolio-backtest`.
+## Default picks
+
+The default 8 picks are MSFT, AAPL, GOOGL, NVDA, MU, NFLX, PYPL and TSLA. They were chosen from return correlations in the 2021–24 window only: NVDA, AMD and AMAT move together (correlation about 0.75), as do MU and WDC (0.73), so the sleeve keeps one or two chip stocks and adds software, media, payments and autos.
+
+On the 2024–26 test window, the default plan (75% core, 8 picks at 3.125% each) scored +33%, −16% max drawdown and Sharpe 0.98, against SPY's +24% and −19%. The first 8 watchlist tickers, which hold five chip and storage stocks, scored +53% because chips boomed in that window. That's the concentration risk the default avoids.
 
 ## Findings
 

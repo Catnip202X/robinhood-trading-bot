@@ -114,7 +114,7 @@ def run_portfolio_plan(args) -> dict[str, object]:
     from decimal import Decimal
 
     from robinhood_trading_bot.guardrails import DecisionLog
-    from robinhood_trading_bot.portfolio import is_rebalance_due, plan_rebalance
+    from robinhood_trading_bot.portfolio import is_rebalance_due, plan_deposit, plan_rebalance
 
     plan = _load_plan(args.plan)
     holdings = {}
@@ -122,6 +122,12 @@ def run_portfolio_plan(args) -> dict[str, object]:
         symbol, _, value = item.partition("=")
         holdings[symbol.strip().upper()] = Decimal(value)
     today = date.fromisoformat(args.today) if args.today else date.today()
+    if args.deposit:
+        result = plan_deposit(plan, holdings, Decimal(args.deposit), Decimal(args.cash))
+        record = {"lane": "portfolio", "mode": "dry-run", "today": today.isoformat(), "action": "deposit",
+                  "picks": list(plan.active_picks), **result.to_public_dict()}
+        DecisionLog(args.log).write(record)
+        return record
     last = date.fromisoformat(args.last_rebalance) if args.last_rebalance else None
     due = args.force or is_rebalance_due(last, today, plan.rebalance)
     result = plan_rebalance(plan, holdings, Decimal(args.cash))
@@ -129,6 +135,7 @@ def run_portfolio_plan(args) -> dict[str, object]:
         "lane": "portfolio",
         "mode": "dry-run",
         "today": today.isoformat(),
+        "action": "rebalance",
         "rebalance_due": due,
         "picks": list(plan.active_picks),
         **result.to_public_dict(),
@@ -199,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     plan_parser.add_argument("--cash", required=True, help="Settled cash in USD the lane may use. Never margin buying power.")
     plan_parser.add_argument("--last-rebalance", help="YYYY-MM-DD of the last rebalance")
     plan_parser.add_argument("--today", help="YYYY-MM-DD override for testing")
+    plan_parser.add_argument("--deposit", help="USD of new money to invest now, split by target weights")
     plan_parser.add_argument("--force", action="store_true", help="Plan orders even if a rebalance isn't due")
     plan_parser.add_argument("--log", default="logs/portfolio_decisions.jsonl")
     pbt_parser = subparsers.add_parser("portfolio-backtest", help="Backtest the plan's target weights on daily closes")

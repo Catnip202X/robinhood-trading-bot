@@ -64,6 +64,13 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-11-27 (portfolio deposits and default picks)
+
+- Added `plan_deposit` and a `--deposit` option on `portfolio-plan`: new money is invested right away, split by target weights and tilted toward underweight holdings, with sub-minimum buys folded into the rest. Set the default picks in `config/portfolio.example.json` to MSFT, AAPL, GOOGL, NVDA, MU, NFLX, PYPL, TSLA.
+- The user will add money each payday and asked Claude to choose the picks. Picks were chosen for industry spread from 2021-24 correlations, not from test-window returns. Deposits are not capped by the starting budget but never exceed settled cash, and margin is never used.
+- Verification: added unit tests for weight-split deposits, underweight-first deposits, cash caps and minimum-order handling. Ran the full unittest suite, the deposit CLI path and `portfolio-backtest`, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed.
+
 ### 2026-11-27 (portfolio lane)
 
 - Added a set-and-forget portfolio lane (`portfolio.py`): a diversified ETF core plus an equal-weight picks sleeve with a per-pick cap, a quarterly rebalance schedule, dry-run stock order intents, and a daily-close backtester. Added the `portfolio-plan` and `portfolio-backtest` CLI commands, `config/portfolio.example.json` (local `config/portfolio.json` is ignored), a README section and a backtest report.

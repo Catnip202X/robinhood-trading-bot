@@ -217,6 +217,55 @@ def plan_rebalance(plan: PortfolioPlan, holdings_usd: dict[str, Decimal], settle
     return RebalancePlan(lane_value, new_cash, targets, tuple(sells + buy_orders), tuple(warnings))
 
 
+def plan_deposit(plan: PortfolioPlan, holdings_usd: dict[str, Decimal], deposit_usd: Decimal, settled_cash_usd: Decimal) -> RebalancePlan:
+    """Return dry-run buys that put a new deposit to work right away.
+
+    Each deposit is split by the target weights, tilted toward whatever is
+    under target, so regular deposits keep the mix close to target and the
+    quarterly rebalance has less to sell. A deposit is explicit new money, so
+    it is not limited by ``budget_usd``, but it can never exceed settled cash.
+    Buys under the minimum order are folded into the others.
+    """
+
+    holdings = {k.upper(): Decimal(v) for k, v in holdings_usd.items() if Decimal(v) > 0}
+    deposit = _cents(min(Decimal(deposit_usd), Decimal(settled_cash_usd)))
+    warnings: list[str] = []
+    if deposit < Decimal(deposit_usd):
+        warnings.append("deposit reduced to settled cash; margin is never used")
+    weights = target_weights(plan)
+    lane_value = sum(holdings.values(), Decimal("0")) + deposit
+    targets = {symbol: _cents(weight * lane_value) for symbol, weight in weights.items()}
+    gaps = {s: t - holdings.get(s, Decimal("0")) for s, t in targets.items()}
+    gaps = {s: g for s, g in gaps.items() if g > 0}
+
+    while gaps:
+        total_gap = sum(gaps.values(), Decimal("0"))
+        scale = min(Decimal("1"), deposit / total_gap)
+        amounts = {s: _cents(g * scale) for s, g in gaps.items()}
+        small = [s for s, a in amounts.items() if a < plan.min_order_usd]
+        if not small:
+            break
+        # Drop the smallest gap and retry, so the money goes to fewer, larger buys.
+        gaps.pop(min(small, key=lambda s: gaps[s]))
+    else:
+        amounts = {}
+
+    if not amounts and deposit >= plan.min_order_usd:
+        # Everything is at target: put the deposit in the largest core holding.
+        anchor = max(plan.core_weights, key=lambda s: plan.core_weights[s])
+        amounts = {anchor: deposit}
+    remainder = deposit - sum(amounts.values(), Decimal("0"))
+    if amounts and Decimal("0") < remainder < Decimal("0.10"):
+        # Rounding pennies go to the largest buy so the whole deposit is used.
+        largest = max(amounts, key=lambda s: amounts[s])
+        amounts[largest] += remainder
+    skipped = deposit - sum(amounts.values(), Decimal("0"))
+    if skipped >= plan.min_order_usd:
+        warnings.append(f"${skipped} left as cash because some buys were under the minimum order")
+    orders = tuple(StockOrderIntent(s, "buy", str(a)) for s, a in sorted(amounts.items()) if a > 0)
+    return RebalancePlan(lane_value, deposit, targets, orders, tuple(warnings))
+
+
 # ---- backtest -------------------------------------------------------------
 
 def load_close_prices(directory: str | Path, symbols: list[str]):
