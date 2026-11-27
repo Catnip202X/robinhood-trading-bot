@@ -101,6 +101,25 @@ python -m robinhood_trading_bot.cli crypto-signal --symbol ETH-USD --coinbase --
 
 `crypto-signal` is dry-run only. It prints and logs the decision and a sanitized order intent. See [docs/crypto-backtest-2026-11-27.md](docs/crypto-backtest-2026-11-27.md) for the first backtest: the signal showed no edge after costs, so live execution stays off.
 
+## Portfolio Lane (set-and-forget, dry-run)
+
+A long-term lane: a diversified core of ETFs plus a small equal-weight sleeve of stock picks, rebalanced back to target weights once a quarter. It only prints and logs proposed orders.
+
+- Default plan (`config/portfolio.example.json`): $50 budget, 75% core (VTI 50%, VXUS 20%, BND 20%, GLD 10%) and 25% picks, at most 8 picks, each capped at 5% of the lane, $1 minimum order.
+- Copy it to `config/portfolio.json` (ignored by Git) to customise. An empty `picks` list uses the first 8 tickers in `BOT_TECH_WATCHLIST`.
+- `--cash` must be settled cash. The lane never uses margin buying power, and new cash is capped at the budget minus what the lane already holds.
+- Picks dropped from the plan are sold in full. Drift under the $1 minimum is left alone.
+
+```bash
+# What would a rebalance do today?
+python -m robinhood_trading_bot.cli portfolio-plan --cash 50 --holding VTI=18.40 --last-rebalance 2026-09-30
+
+# Backtest the plan's weights on daily closes (folders of SYMBOL_1d.csv files)
+python -m robinhood_trading_bot.cli portfolio-backtest --prices-dir path/to/etfs --prices-dir path/to/stocks
+```
+
+See `docs/portfolio-backtest-2026-11-27.md` for the backtest behind these defaults.
+
 ## Tests
 
 ```powershell

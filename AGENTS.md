@@ -64,6 +64,13 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-11-27 (portfolio lane)
+
+- Added a set-and-forget portfolio lane (`portfolio.py`): a diversified ETF core plus an equal-weight picks sleeve with a per-pick cap, a quarterly rebalance schedule, dry-run stock order intents, and a daily-close backtester. Added the `portfolio-plan` and `portfolio-backtest` CLI commands, `config/portfolio.example.json` (local `config/portfolio.json` is ignored), a README section and a backtest report.
+- The user wants a long-term, diversified, mostly hands-off account starting at $50, with room for a few long-term stock picks. Backtests favoured a 70-80% diversified core with 8+ picks, rebalanced quarterly, without a trend filter. The lane spends only settled cash up to the plan budget and never uses margin buying power. These rebalancing allocations are separate from the per-trade stock risk cap, which still applies to the stock trading lane.
+- Verification: added unit tests for target weights, caps, budget and cash limits, sell-all of dropped picks, minimum-order drift, the rebalance schedule, and the CLI dry-run log. Ran the full unittest suite, ran both CLI commands on local price data, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed. Price CSVs stay outside the repo.
+
 ### 2026-11-27
 
 - Added a long-only crypto signal lane adapted from KisaragiMomoe/AI_TradeMate_For_BTCUSDT: scale-free LightGBM features (`crypto_signal.py`), a walk-forward backtest with next-bar fills and pessimistic stops (`crypto_backtest.py`), USD caps, an allowed-symbols list, a resetting daily loss stop and a JSON Lines decision log (`guardrails.py`), Coinbase candle loading (`candles.py`), a signed Robinhood Crypto Trading API client whose order calls are blocked by default (`rh_crypto_api.py`), the `crypto-backtest` and `crypto-signal` CLI commands, and a backtest report.

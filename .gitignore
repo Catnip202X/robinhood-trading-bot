@@ -20,3 +20,6 @@ data/
 logs/
 .superpowers/
 .worktrees/
+
+# local portfolio plan (copy from config/portfolio.example.json)
+config/portfolio.json

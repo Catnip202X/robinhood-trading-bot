@@ -8,6 +8,9 @@ from robinhood_trading_bot.config import BotConfig
 from robinhood_trading_bot.snapshot import build_snapshot_from_fixture
 
 
+DEFAULT_PLAN = "config/portfolio.json"
+
+
 def build_status() -> dict[str, object]:
     config = BotConfig.from_env()
     auth = RobinhoodAuthConfig.from_env()
@@ -94,6 +97,82 @@ def run_crypto_signal(args) -> dict[str, object]:
     return record
 
 
+def _load_plan(path: str):
+    from pathlib import Path
+
+    from robinhood_trading_bot.portfolio import PortfolioPlan
+
+    # An empty "picks" list falls back to BOT_TECH_WATCHLIST from .env.
+    plan_path = Path(path)
+    if path == DEFAULT_PLAN and not plan_path.exists():
+        plan_path = Path("config/portfolio.example.json")
+    return PortfolioPlan.from_file(plan_path, fallback_picks=BotConfig.from_env().tech_watchlist)
+
+
+def run_portfolio_plan(args) -> dict[str, object]:
+    from datetime import date
+    from decimal import Decimal
+
+    from robinhood_trading_bot.guardrails import DecisionLog
+    from robinhood_trading_bot.portfolio import is_rebalance_due, plan_rebalance
+
+    plan = _load_plan(args.plan)
+    holdings = {}
+    for item in args.holding or []:
+        symbol, _, value = item.partition("=")
+        holdings[symbol.strip().upper()] = Decimal(value)
+    today = date.fromisoformat(args.today) if args.today else date.today()
+    last = date.fromisoformat(args.last_rebalance) if args.last_rebalance else None
+    due = args.force or is_rebalance_due(last, today, plan.rebalance)
+    result = plan_rebalance(plan, holdings, Decimal(args.cash))
+    record = {
+        "lane": "portfolio",
+        "mode": "dry-run",
+        "today": today.isoformat(),
+        "rebalance_due": due,
+        "picks": list(plan.active_picks),
+        **result.to_public_dict(),
+    }
+    if not due:
+        record["orders"] = []
+        record["warnings"] = [*record["warnings"], "not due yet; pass --force to plan anyway"]
+    DecisionLog(args.log).write(record)
+    return record
+
+
+def run_portfolio_backtest(args) -> dict[str, object]:
+    from robinhood_trading_bot.portfolio import backtest_weights, load_close_prices, summarize_returns, target_weights
+
+    plan = _load_plan(args.plan)
+    weights = {k: float(v) for k, v in target_weights(plan).items()}
+    core = {k: float(v) for k, v in plan.core_weights.items()}
+    symbols = sorted(set(weights) | {"SPY"})
+    frames = []
+    for directory in args.prices_dir:
+        from pathlib import Path
+
+        available = [s for s in symbols if (Path(directory) / f"{s}_1d.csv").exists()]
+        if available:
+            frames.append(load_close_prices(directory, available))
+    import pandas as pd
+
+    prices = pd.concat(frames, axis=1).dropna()
+    missing = sorted(set(symbols) - set(prices.columns))
+    if missing:
+        raise SystemExit(f"missing price files for: {', '.join(missing)}")
+    test = prices.iloc[-args.test_days:]
+    portfolios = {"plan": weights, "core only": core, "SPY": {"SPY": 1.0}}
+    return {
+        "window_start": test.index[0].date(),
+        "window_end": test.index[-1].date(),
+        "rebalance": plan.rebalance,
+        "weights": {k: round(v, 4) for k, v in weights.items()},
+        "results": {
+            name: summarize_returns(backtest_weights(test, w, plan.rebalance)) for name, w in portfolios.items()
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="trading-bot")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -114,6 +193,18 @@ def main(argv: list[str] | None = None) -> int:
     signal_parser.add_argument("--holding-quantity", default="0", help="Coin quantity currently held")
     signal_parser.add_argument("--cost-per-side", type=float, default=0.0025)
     signal_parser.add_argument("--log", default="logs/crypto_decisions.jsonl")
+    plan_parser = subparsers.add_parser("portfolio-plan", help="Dry-run: rebalance orders for the core + picks portfolio")
+    plan_parser.add_argument("--plan", default=DEFAULT_PLAN, help="Plan JSON (falls back to config/portfolio.example.json)")
+    plan_parser.add_argument("--holding", action="append", help="SYMBOL=USD market value held by this lane (repeatable)")
+    plan_parser.add_argument("--cash", required=True, help="Settled cash in USD the lane may use. Never margin buying power.")
+    plan_parser.add_argument("--last-rebalance", help="YYYY-MM-DD of the last rebalance")
+    plan_parser.add_argument("--today", help="YYYY-MM-DD override for testing")
+    plan_parser.add_argument("--force", action="store_true", help="Plan orders even if a rebalance isn't due")
+    plan_parser.add_argument("--log", default="logs/portfolio_decisions.jsonl")
+    pbt_parser = subparsers.add_parser("portfolio-backtest", help="Backtest the plan's target weights on daily closes")
+    pbt_parser.add_argument("--plan", default=DEFAULT_PLAN)
+    pbt_parser.add_argument("--prices-dir", action="append", required=True, help="Folder of SYMBOL_1d.csv files (repeatable)")
+    pbt_parser.add_argument("--test-days", type=int, default=504, help="Trading days to test, ending at the latest bar")
     args = parser.parse_args(argv)
 
     if args.command == "status":
@@ -131,6 +222,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "crypto-signal":
         print(json.dumps(run_crypto_signal(args), indent=2, default=str))
+        return 0
+
+    if args.command == "portfolio-plan":
+        print(json.dumps(run_portfolio_plan(args), indent=2, default=str))
+        return 0
+
+    if args.command == "portfolio-backtest":
+        print(json.dumps(run_portfolio_backtest(args), indent=2, default=str))
         return 0
 
     parser.error(f"unknown command: {args.command}")
