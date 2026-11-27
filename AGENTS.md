@@ -64,6 +64,34 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-11-27 (crypto API setup commands)
+
+- Added `crypto-keygen` (generates an Ed25519 key pair locally) and `crypto-check` (read-only account and quote call using keys from `.env`), the `ROBINHOOD_CRYPTO_API_KEY` and `ROBINHOOD_CRYPTO_PRIVATE_KEY` placeholders in `.env.example`, and README setup steps.
+- The user asked how to connect their API. Nothing read the keys before. Live orders remain blocked, and `crypto-check` doesn't print the account number.
+- Verification: added tests that a generated key signs and verifies and that `crypto-check` refuses to run without keys. Ran the full unittest suite and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: none. Only empty placeholders were added.
+
+### 2026-11-27 (portfolio deposits and default picks)
+
+- Added `plan_deposit` and a `--deposit` option on `portfolio-plan`: new money is invested right away, split by target weights and tilted toward underweight holdings, with sub-minimum buys folded into the rest. Set the default picks in `config/portfolio.example.json` to MSFT, AAPL, GOOGL, NVDA, MU, NFLX, PYPL, TSLA.
+- The user will add money each payday and asked Claude to choose the picks. Picks were chosen for industry spread from 2021-24 correlations, not from test-window returns. Deposits are not capped by the starting budget but never exceed settled cash, and margin is never used.
+- Verification: added unit tests for weight-split deposits, underweight-first deposits, cash caps and minimum-order handling. Ran the full unittest suite, the deposit CLI path and `portfolio-backtest`, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed.
+
+### 2026-11-27 (portfolio lane)
+
+- Added a set-and-forget portfolio lane (`portfolio.py`): a diversified ETF core plus an equal-weight picks sleeve with a per-pick cap, a quarterly rebalance schedule, dry-run stock order intents, and a daily-close backtester. Added the `portfolio-plan` and `portfolio-backtest` CLI commands, `config/portfolio.example.json` (local `config/portfolio.json` is ignored), a README section and a backtest report.
+- The user wants a long-term, diversified, mostly hands-off account starting at $50, with room for a few long-term stock picks. Backtests favoured a 70-80% diversified core with 8+ picks, rebalanced quarterly, without a trend filter. The lane spends only settled cash up to the plan budget and never uses margin buying power. These rebalancing allocations are separate from the per-trade stock risk cap, which still applies to the stock trading lane.
+- Verification: added unit tests for target weights, caps, budget and cash limits, sell-all of dropped picks, minimum-order drift, the rebalance schedule, and the CLI dry-run log. Ran the full unittest suite, ran both CLI commands on local price data, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed. Price CSVs stay outside the repo.
+
+### 2026-11-27
+
+- Added a long-only crypto signal lane adapted from KisaragiMomoe/AI_TradeMate_For_BTCUSDT: scale-free LightGBM features (`crypto_signal.py`), a walk-forward backtest with next-bar fills and pessimistic stops (`crypto_backtest.py`), USD caps, an allowed-symbols list, a resetting daily loss stop and a JSON Lines decision log (`guardrails.py`), Coinbase candle loading (`candles.py`), a signed Robinhood Crypto Trading API client whose order calls are blocked by default (`rh_crypto_api.py`), the `crypto-backtest` and `crypto-signal` CLI commands, and a backtest report.
+- The user wants to trade BTC/ETH on Robinhood with about $100 using ideas from that repo. Robinhood crypto is spot only, so the lane is long-only. The first backtest showed no edge after costs, so live execution stays off.
+- Verification: wrote unit tests for the documented API signature example, blocked live orders, guardrail caps and the daily reset, the decision log, backtest fills and costs, and feature scale-invariance. Ran the full unittest suite, ran both CLI commands on two years of BTC-USD/ETH-USD hourly data, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed. The signature test uses Robinhood's published example key, which is not a real credential. Candle CSVs stay outside the repo.
+
 ### 2026-07-06
 
 - Updated the local control panel scheduler design to allow user-configurable intervals from 1 second through 60 minutes.

@@ -1,0 +1,24 @@
+{
+  "budget_usd": "50",
+  "core_fraction": "0.75",
+  "core_weights": {
+    "VTI": "0.5",
+    "VXUS": "0.2",
+    "BND": "0.2",
+    "GLD": "0.1"
+  },
+  "picks": [
+    "MSFT",
+    "AAPL",
+    "GOOGL",
+    "NVDA",
+    "MU",
+    "NFLX",
+    "PYPL",
+    "TSLA"
+  ],
+  "max_picks": 8,
+  "pick_cap_fraction": "0.05",
+  "min_order_usd": "1.00",
+  "rebalance": "Q"
+}

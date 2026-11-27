@@ -82,6 +82,60 @@ Crypto buy candidates are sized as USD notional amounts so partial crypto purcha
 
 The app currently creates sanitized dry-run crypto order intents only. Live crypto execution remains blocked until the authenticated Robinhood MCP server exposes official crypto order review and placement tools, and even then real orders require explicit confirmation of the exact trade.
 
+## Crypto Signal Lane (BTC-USD, ETH-USD)
+
+A long-only hourly signal adapted from [AI_TradeMate_For_BTCUSDT](https://github.com/KisaragiMomoe/AI_TradeMate_For_BTCUSDT), rebuilt for Robinhood spot crypto (no shorting, no leverage):
+
+- `crypto_signal.py`: scale-free features and a LightGBM model predicting the next hour's return. Entries need a prediction above the round-trip cost and price above the 200-hour SMA.
+- `crypto_backtest.py`: walk-forward backtest with next-bar fills, pessimistic stop/take-profit handling, per-side costs and a daily loss stop.
+- `guardrails.py`: lane and per-coin USD caps, an allowed-symbols list, a daily loss stop that resets each UTC day, and an append-only JSON Lines decision log in `logs/`.
+- `rh_crypto_api.py`: a signed client for Robinhood's official [Crypto Trading API](https://docs.robinhood.com/crypto/trading/). Order placement raises `LiveOrdersBlocked` unless the client is built with `allow_live_orders=True`, and nothing in the app does that yet.
+- `candles.py`: hourly candles from Coinbase public data, because the Robinhood API has no candle history.
+
+```powershell
+python -m pip install -e ".[signals,api]"
+$env:PYTHONPATH='src'
+python -m robinhood_trading_bot.cli crypto-backtest --candles data/btc_usd_1h.csv
+python -m robinhood_trading_bot.cli crypto-signal --symbol ETH-USD --coinbase --equity 100 --buying-power 100
+```
+
+`crypto-signal` is dry-run only. It prints and logs the decision and a sanitized order intent. See [docs/crypto-backtest-2026-11-27.md](docs/crypto-backtest-2026-11-27.md) for the first backtest: the signal showed no edge after costs, so live execution stays off.
+
+## Portfolio Lane (set-and-forget, dry-run)
+
+A long-term lane: a diversified core of ETFs plus a small equal-weight sleeve of stock picks, rebalanced back to target weights once a quarter. It only prints and logs proposed orders.
+
+- Default plan (`config/portfolio.example.json`): $50 budget, 75% core (VTI 50%, VXUS 20%, BND 20%, GLD 10%) and 25% picks, at most 8 picks, each capped at 5% of the lane, $1 minimum order.
+- Default picks: MSFT, AAPL, GOOGL, NVDA, MU, NFLX, PYPL, TSLA (one or two per industry, chosen from 2021-24 return correlations so the sleeve isn't mostly chip stocks).
+- Copy it to `config/portfolio.json` (ignored by Git) to customise. An empty `picks` list uses the first 8 tickers in `BOT_TECH_WATCHLIST`.
+- Deposits: `--deposit 100` invests new money right away, split by the target weights and tilted toward whatever is under target. Deposits aren't limited by the starting budget but never exceed settled cash.
+- `--cash` must be settled cash. The lane never uses margin buying power, and new cash is capped at the budget minus what the lane already holds.
+- Picks dropped from the plan are sold in full. Drift under the $1 minimum is left alone.
+
+```bash
+# What would a rebalance do today?
+python -m robinhood_trading_bot.cli portfolio-plan --cash 50 --holding VTI=18.40 --last-rebalance 2026-09-30
+
+# Invest a new deposit (e.g. on payday)
+python -m robinhood_trading_bot.cli portfolio-plan --cash 120 --deposit 100 --holding VTI=40 --holding BND=15
+
+# Backtest the plan's weights on daily closes (folders of SYMBOL_1d.csv files)
+python -m robinhood_trading_bot.cli portfolio-backtest --prices-dir path/to/etfs --prices-dir path/to/stocks
+```
+
+See `docs/portfolio-backtest-2026-11-27.md` for the backtest behind these defaults.
+
+## Connecting the Robinhood Crypto API
+
+The Crypto Trading API covers crypto only. Stock and ETF orders from the portfolio lane are proposals you place yourself.
+
+1. `pip install -e .[api]`, then `python -m robinhood_trading_bot.cli crypto-keygen`. It prints a public and a private key once.
+2. On a desktop browser, open Robinhood (web classic), go to crypto account settings, choose **Add key**, paste the **public** key, and pick read-only actions to start.
+3. Copy `.env.example` to `.env` and fill in `ROBINHOOD_CRYPTO_API_KEY` (from Robinhood) and `ROBINHOOD_CRYPTO_PRIVATE_KEY` (from step 1). `.env` is ignored by Git.
+4. `python -m robinhood_trading_bot.cli crypto-check` makes a read-only call to confirm the keys work. Order placement stays blocked in code.
+
+If a private key is ever exposed, delete that key on Robinhood and make a new one.
+
 ## Tests
 
 ```powershell
