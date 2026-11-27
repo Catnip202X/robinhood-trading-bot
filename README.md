@@ -82,6 +82,25 @@ Crypto buy candidates are sized as USD notional amounts so partial crypto purcha
 
 The app currently creates sanitized dry-run crypto order intents only. Live crypto execution remains blocked until the authenticated Robinhood MCP server exposes official crypto order review and placement tools, and even then real orders require explicit confirmation of the exact trade.
 
+## Crypto Signal Lane (BTC-USD, ETH-USD)
+
+A long-only hourly signal adapted from [AI_TradeMate_For_BTCUSDT](https://github.com/KisaragiMomoe/AI_TradeMate_For_BTCUSDT), rebuilt for Robinhood spot crypto (no shorting, no leverage):
+
+- `crypto_signal.py`: scale-free features and a LightGBM model predicting the next hour's return. Entries need a prediction above the round-trip cost and price above the 200-hour SMA.
+- `crypto_backtest.py`: walk-forward backtest with next-bar fills, pessimistic stop/take-profit handling, per-side costs and a daily loss stop.
+- `guardrails.py`: lane and per-coin USD caps, an allowed-symbols list, a daily loss stop that resets each UTC day, and an append-only JSON Lines decision log in `logs/`.
+- `rh_crypto_api.py`: a signed client for Robinhood's official [Crypto Trading API](https://docs.robinhood.com/crypto/trading/). Order placement raises `LiveOrdersBlocked` unless the client is built with `allow_live_orders=True`, and nothing in the app does that yet.
+- `candles.py`: hourly candles from Coinbase public data, because the Robinhood API has no candle history.
+
+```powershell
+python -m pip install -e ".[signals,api]"
+$env:PYTHONPATH='src'
+python -m robinhood_trading_bot.cli crypto-backtest --candles data/btc_usd_1h.csv
+python -m robinhood_trading_bot.cli crypto-signal --symbol ETH-USD --coinbase --equity 100 --buying-power 100
+```
+
+`crypto-signal` is dry-run only. It prints and logs the decision and a sanitized order intent. See [docs/crypto-backtest-2026-11-27.md](docs/crypto-backtest-2026-11-27.md) for the first backtest: the signal showed no edge after costs, so live execution stays off.
+
 ## Tests
 
 ```powershell

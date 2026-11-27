@@ -64,6 +64,13 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-11-27
+
+- Added a long-only crypto signal lane adapted from KisaragiMomoe/AI_TradeMate_For_BTCUSDT: scale-free LightGBM features (`crypto_signal.py`), a walk-forward backtest with next-bar fills and pessimistic stops (`crypto_backtest.py`), USD caps, an allowed-symbols list, a resetting daily loss stop and a JSON Lines decision log (`guardrails.py`), Coinbase candle loading (`candles.py`), a signed Robinhood Crypto Trading API client whose order calls are blocked by default (`rh_crypto_api.py`), the `crypto-backtest` and `crypto-signal` CLI commands, and a backtest report.
+- The user wants to trade BTC/ETH on Robinhood with about $100 using ideas from that repo. Robinhood crypto is spot only, so the lane is long-only. The first backtest showed no edge after costs, so live execution stays off.
+- Verification: wrote unit tests for the documented API signature example, blocked live orders, guardrail caps and the daily reset, the decision log, backtest fills and costs, and feature scale-invariance. Ran the full unittest suite, ran both CLI commands on two years of BTC-USD/ETH-USD hourly data, and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: no credentials, account identifiers, local databases or logs were committed. The signature test uses Robinhood's published example key, which is not a real credential. Candle CSVs stay outside the repo.
+
 ### 2026-07-06
 
 - Updated the local control panel scheduler design to allow user-configurable intervals from 1 second through 60 minutes.
