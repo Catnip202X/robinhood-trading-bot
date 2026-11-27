@@ -125,6 +125,17 @@ python -m robinhood_trading_bot.cli portfolio-backtest --prices-dir path/to/etfs
 
 See `docs/portfolio-backtest-2026-11-27.md` for the backtest behind these defaults.
 
+## Connecting the Robinhood Crypto API
+
+The Crypto Trading API covers crypto only. Stock and ETF orders from the portfolio lane are proposals you place yourself.
+
+1. `pip install -e .[api]`, then `python -m robinhood_trading_bot.cli crypto-keygen`. It prints a public and a private key once.
+2. On a desktop browser, open Robinhood (web classic), go to crypto account settings, choose **Add key**, paste the **public** key, and pick read-only actions to start.
+3. Copy `.env.example` to `.env` and fill in `ROBINHOOD_CRYPTO_API_KEY` (from Robinhood) and `ROBINHOOD_CRYPTO_PRIVATE_KEY` (from step 1). `.env` is ignored by Git.
+4. `python -m robinhood_trading_bot.cli crypto-check` makes a read-only call to confirm the keys work. Order placement stays blocked in code.
+
+If a private key is ever exposed, delete that key on Robinhood and make a new one.
+
 ## Tests
 
 ```powershell

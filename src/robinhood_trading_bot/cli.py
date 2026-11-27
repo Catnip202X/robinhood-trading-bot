@@ -180,6 +180,48 @@ def run_portfolio_backtest(args) -> dict[str, object]:
     }
 
 
+def run_crypto_keygen() -> dict[str, object]:
+    """Generate an Ed25519 key pair for Robinhood's Crypto Trading API."""
+
+    import base64
+
+    from nacl.signing import SigningKey  # optional dependency: pip install -e .[api]
+
+    key = SigningKey.generate()
+    return {
+        "public_key": base64.b64encode(key.verify_key.encode()).decode(),
+        "private_key": base64.b64encode(key.encode()).decode(),
+        "next_steps": [
+            "Paste public_key into Robinhood's API credentials page (desktop web, crypto account settings).",
+            "Put private_key and the API key Robinhood gives you into .env as ROBINHOOD_CRYPTO_PRIVATE_KEY and ROBINHOOD_CRYPTO_API_KEY.",
+            "Never commit .env or share private_key.",
+        ],
+    }
+
+
+def run_crypto_check() -> dict[str, object]:
+    """Read-only connection test: fetch the crypto account and a BTC quote."""
+
+    from robinhood_trading_bot.env import merged_env
+    from robinhood_trading_bot.rh_crypto_api import RobinhoodCryptoClient
+
+    env = merged_env(".env")
+    api_key = env.get("ROBINHOOD_CRYPTO_API_KEY", "").strip()
+    private_key = env.get("ROBINHOOD_CRYPTO_PRIVATE_KEY", "").strip()
+    if not api_key or not private_key:
+        raise SystemExit("set ROBINHOOD_CRYPTO_API_KEY and ROBINHOOD_CRYPTO_PRIVATE_KEY in .env first")
+    client = RobinhoodCryptoClient(api_key, private_key)  # live orders stay blocked
+    account = client.get_account() or {}
+    quote = client.get_best_bid_ask("BTC-USD")
+    return {
+        "connected": True,
+        "account_status": account.get("status"),
+        "buying_power_currency": account.get("buying_power_currency"),
+        "btc_quote": quote,
+        "live_orders_enabled": client.allow_live_orders,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="trading-bot")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -213,6 +255,8 @@ def main(argv: list[str] | None = None) -> int:
     pbt_parser.add_argument("--plan", default=DEFAULT_PLAN)
     pbt_parser.add_argument("--prices-dir", action="append", required=True, help="Folder of SYMBOL_1d.csv files (repeatable)")
     pbt_parser.add_argument("--test-days", type=int, default=504, help="Trading days to test, ending at the latest bar")
+    subparsers.add_parser("crypto-keygen", help="Generate a Robinhood Crypto API key pair (prints both keys once)")
+    subparsers.add_parser("crypto-check", help="Read-only test of your Robinhood Crypto API keys")
     args = parser.parse_args(argv)
 
     if args.command == "status":
@@ -230,6 +274,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "crypto-signal":
         print(json.dumps(run_crypto_signal(args), indent=2, default=str))
+        return 0
+
+    if args.command == "crypto-keygen":
+        print(json.dumps(run_crypto_keygen(), indent=2))
+        return 0
+
+    if args.command == "crypto-check":
+        print(json.dumps(run_crypto_check(), indent=2, default=str))
         return 0
 
     if args.command == "portfolio-plan":

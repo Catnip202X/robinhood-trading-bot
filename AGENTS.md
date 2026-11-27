@@ -64,6 +64,13 @@ Do not commit a change if its changelog entry is missing.
 
 ## Changelog
 
+### 2026-11-27 (crypto API setup commands)
+
+- Added `crypto-keygen` (generates an Ed25519 key pair locally) and `crypto-check` (read-only account and quote call using keys from `.env`), the `ROBINHOOD_CRYPTO_API_KEY` and `ROBINHOOD_CRYPTO_PRIVATE_KEY` placeholders in `.env.example`, and README setup steps.
+- The user asked how to connect their API. Nothing read the keys before. Live orders remain blocked, and `crypto-check` doesn't print the account number.
+- Verification: added tests that a generated key signs and verifies and that `crypto-check` refuses to run without keys. Ran the full unittest suite and ran `git diff --check` and a secret-pattern scan.
+- Secrets/account data touched: none. Only empty placeholders were added.
+
 ### 2026-11-27 (portfolio deposits and default picks)
 
 - Added `plan_deposit` and a `--deposit` option on `portfolio-plan`: new money is invested right away, split by target weights and tilted toward underweight holdings, with sub-minimum buys folded into the rest. Set the default picks in `config/portfolio.example.json` to MSFT, AAPL, GOOGL, NVDA, MU, NFLX, PYPL, TSLA.

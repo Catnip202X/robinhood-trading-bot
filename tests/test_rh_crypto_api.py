@@ -65,3 +65,36 @@ class LiveOrderBlockTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KeygenCliTests(unittest.TestCase):
+    def test_keygen_output_signs_and_verifies(self):
+        import base64
+
+        from nacl.signing import VerifyKey
+
+        from robinhood_trading_bot.cli import run_crypto_keygen
+        from robinhood_trading_bot.rh_crypto_api import sign_message
+
+        keys = run_crypto_keygen()
+        signature = base64.b64decode(sign_message(keys["private_key"], "hello"))
+        VerifyKey(base64.b64decode(keys["public_key"])).verify(b"hello", signature)
+
+    def test_check_requires_keys(self):
+        import os
+        import tempfile
+
+        from robinhood_trading_bot.cli import run_crypto_check
+
+        cwd = os.getcwd()
+        saved = {k: os.environ.pop(k, None) for k in ("ROBINHOOD_CRYPTO_API_KEY", "ROBINHOOD_CRYPTO_PRIVATE_KEY")}
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
+            try:
+                with self.assertRaises(SystemExit):
+                    run_crypto_check()
+            finally:
+                os.chdir(cwd)
+                for k, v in saved.items():
+                    if v is not None:
+                        os.environ[k] = v
